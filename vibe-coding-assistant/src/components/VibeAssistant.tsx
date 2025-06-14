@@ -406,12 +406,17 @@ export function VibeAssistant({
       terminalRef.current.write(data);
     }
     
-    // Also add significant output to chat history
-    if (data.trim() && data.length > 5 && !data.includes('\x1b[')) {
+    // Clean and add terminal output to chat history
+    const cleanData = data
+      .replace(/\x1b\[[0-9;]*m/g, '') // Remove ANSI color codes
+      .replace(/\x1b\[[0-9;]*[A-Za-z]/g, '') // Remove other ANSI escape sequences
+      .trim();
+    
+    if (cleanData && cleanData.length > 2) {
       setChatHistory(prev => {
         const newHistory = [...prev, {
           type: 'assistant' as const,
-          content: data.trim(),
+          content: cleanData,
           timestamp: new Date()
         }];
         // Auto-scroll after state update
@@ -558,14 +563,23 @@ export function VibeAssistant({
                           className={`${
                             message.type === 'user' 
                               ? 'max-w-xs lg:max-w-md' 
-                              : 'max-w-full w-full'
+                              : 'w-full'
                           } px-4 py-2 rounded-lg text-sm ${
                             message.type === 'user'
                               ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                               : 'bg-gray-100 text-gray-800 border'
                           }`}
                         >
-                          <div className="break-words whitespace-pre-wrap font-mono text-xs">
+                          <div 
+                            className="break-words whitespace-pre-wrap font-mono text-xs overflow-visible"
+                            style={{ 
+                              wordBreak: 'break-all',
+                              overflowWrap: 'anywhere',
+                              textOverflow: 'clip',
+                              overflow: 'visible',
+                              whiteSpace: 'pre-wrap'
+                            }}
+                          >
                             {message.content}
                           </div>
                           <div
