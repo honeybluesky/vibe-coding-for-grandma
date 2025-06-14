@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { XMarkIcon, SparklesIcon, WifiIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 // Dynamically import xterm to avoid SSR issues
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Terminal: any = null;
@@ -258,7 +258,7 @@ export function VibeAssistant({
       }
     } catch (error) {
       console.error('Failed to initialize terminal:', error);
-      setConnectionError('Failed to initialize your coding assistant');
+      setConnectionError('Failed to initialize your coding workspace');
     }
   }, []);
 
@@ -272,7 +272,7 @@ export function VibeAssistant({
     
     if (!Terminal || !FitAddon || !socketIo) {
       console.error('❌ Failed to load terminal components');
-      setConnectionError('Failed to load terminal components');
+      setConnectionError('Failed to load your coding assistant');
       setIsConnecting(false);
       return;
     }
@@ -307,8 +307,8 @@ export function VibeAssistant({
         
         if (terminalRef.current) {
           terminalRef.current.clear();
-          terminalRef.current.writeln('🎉 Welcome to your Vibe Assistant!');
-          terminalRef.current.writeln('Your AI coding companion is ready to help.');
+          terminalRef.current.writeln('🎉 Welcome to Vibe Assistant!');
+          terminalRef.current.writeln('Powered by Anthropic - Your AI coding companion is ready.');
         }
 
         // Fit terminal after connection
@@ -432,7 +432,7 @@ export function VibeAssistant({
           <button
             onClick={() => setIsOpen(true)}
             className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
-            title="Open Vibe Assistant (⌘K)"
+            title="Open Vibe Assistant - Powered by Anthropic (⌘K)"
           >
             <SparklesIcon className="w-6 h-6" />
           </button>
@@ -451,17 +451,11 @@ export function VibeAssistant({
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-neutral-900">Vibe Assistant</h2>
-                  <p className="text-xs text-neutral-500">Your AI coding companion</p>
+                  <p className="text-xs text-neutral-500">Powered by Anthropic</p>
                 </div>
                 <div className="flex items-center text-xs text-neutral-500 bg-neutral-100 px-2 py-1 rounded-full">
                   <span className="font-mono">⌘K</span>
                 </div>
-                {isConnected && (
-                  <div className="flex items-center space-x-2 text-green-600 text-sm">
-                    <WifiIcon className="w-4 h-4" />
-                    <span>Connected</span>
-                  </div>
-                )}
               </div>
               {!embedded && (
                 <div className="flex items-center space-x-2">
@@ -486,7 +480,7 @@ export function VibeAssistant({
                         <SparklesIcon className="w-8 h-8 text-white animate-pulse" />
                       </div>
                       <h3 className="text-lg font-semibold text-neutral-800 mb-2">Starting your coding session</h3>
-                      <p className="text-sm text-neutral-600 mb-4">Your AI coding companion is waking up...</p>
+                      <p className="text-sm text-neutral-600 mb-4">Claude Code is initializing your workspace...</p>
                       <div className="flex items-center justify-center space-x-1">
                         <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                         <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -504,7 +498,7 @@ export function VibeAssistant({
                         <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       </div>
                       <h3 className="text-lg font-semibold text-neutral-800 mb-2">Connecting to your workspace</h3>
-                      <p className="text-sm text-neutral-600 mb-4">Setting up your AI-powered development environment...</p>
+                      <p className="text-sm text-neutral-600 mb-4">Setting up your coding workspace...</p>
                       <div className="flex items-center justify-center space-x-1">
                         <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                         <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -522,7 +516,7 @@ export function VibeAssistant({
                         <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       </div>
                       <h3 className="text-lg font-semibold text-neutral-800 mb-2">✨ Connected! Setting up your workspace</h3>
-                      <p className="text-sm text-neutral-600 mb-4">Preparing your AI-powered development environment...</p>
+                      <p className="text-sm text-neutral-600 mb-4">Preparing your coding workspace...</p>
                       <div className="flex items-center justify-center space-x-1">
                         <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                         <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -539,13 +533,13 @@ export function VibeAssistant({
                       <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <ExclamationTriangleIcon className="w-8 h-8 text-red-600" />
                       </div>
-                      <h3 className="text-lg font-semibold text-red-800 mb-2">Oops! Something went wrong</h3>
-                      <p className="text-sm text-red-600 mb-4">Don&apos;t worry, let&apos;s try connecting again</p>
-                      <button 
+                      <h3 className="text-lg font-semibold text-red-800 mb-2">Connection failed</h3>
+                      <p className="text-sm text-red-600 mb-4">Unable to connect to Claude Code. Let&apos;s try again.</p>
+                                              <button 
                         onClick={connectToAssistant}
                         className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg text-sm font-medium transition-all duration-200"
                       >
-                        Try Again
+                        Reconnect to Claude Code
                       </button>
                     </div>
                   </div>
@@ -555,48 +549,6 @@ export function VibeAssistant({
                 <div className="w-full h-full relative" style={{ 
                   zIndex: isConnected && !isInitializing ? 20 : 1 
                 }}>
-                  {/* Terminal header bar */}
-                  <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-3 flex items-center space-x-3 border-b border-slate-600">
-                    {/* Mac-style window buttons */}
-                    <div className="flex space-x-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500 opacity-60"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-500 opacity-60"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-500 opacity-60"></div>
-                    </div>
-                    
-                    {/* Terminal title */}
-                    <div className="flex-1 flex items-center space-x-2">
-                      <SparklesIcon className="w-4 h-4 text-purple-400" />
-                      <span className="text-sm font-medium text-slate-300">Vibe Assistant</span>
-                      <span className="text-xs text-slate-500">•</span>
-                      <span className="text-xs text-slate-400">AI-powered coding companion</span>
-                    </div>
-                    
-                    {/* Connection status */}
-                    <div className="flex items-center space-x-2 text-xs">
-                      {isConnected ? (
-                        <div className="flex items-center space-x-2 text-green-400">
-                          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                          <span>Connected</span>
-                        </div>
-                      ) : isConnecting ? (
-                        <div className="flex items-center space-x-2 text-yellow-400">
-                          <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
-                          <span>Connecting...</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center space-x-2 text-slate-400">
-                          <div className="w-2 h-2 rounded-full bg-slate-400"></div>
-                          <span>Disconnected</span>
-                        </div>
-                      )}
-                      {/* Debug info */}
-                      <span className="text-slate-500 text-xs">
-                        {isInitializing ? '(Init)' : '(Ready)'}
-                      </span>
-                    </div>
-                  </div>
-                  
                   {/* Terminal content with gradient background */}
                   <div className="relative h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
                     {/* Subtle grid pattern overlay */}
@@ -629,6 +581,18 @@ export function VibeAssistant({
                           <div className="flex items-center space-x-1">
                             <span>💡</span>
                             <span>Try: <kbd className="bg-slate-700 px-1 rounded text-purple-300">ls</kbd> or <kbd className="bg-slate-700 px-1 rounded text-purple-300">pwd</kbd></span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Claude Code branding footer */}
+                    {isConnected && !isInitializing && (
+                      <div className="absolute bottom-4 left-4 z-20">
+                        <div className="bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-slate-400 border border-slate-700/50">
+                          <div className="flex items-center space-x-2">
+                            <SparklesIcon className="w-3 h-3 text-purple-400" />
+                            <span>Powered by Anthropic</span>
                           </div>
                         </div>
                       </div>
