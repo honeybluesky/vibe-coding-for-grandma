@@ -482,8 +482,8 @@ export function VibeAssistant({
             </div>
 
             {/* Content */}
-            <div className="flex-1 flex">
-              <div className="flex-1 bg-neutral-900 relative overflow-hidden">
+            <div className="flex-1 flex flex-col">
+              <div className="flex-1 relative overflow-hidden">
                 {/* Loading screen */}
                 {!isConnected && !isConnecting && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 z-10">
@@ -542,69 +542,42 @@ export function VibeAssistant({
                   </div>
                 )}
                 
-                {/* Chat Interface - Only show when ready */}
+                {/* Chat Messages Area - Only show when ready */}
                 {isConnected && !connectionError && (
-                  <div className="w-full h-full flex flex-col bg-white">
-                    {/* Chat Messages Area */}
-                    <div 
-                      ref={chatMessagesRef}
-                      className="flex-1 overflow-y-auto p-4 space-y-4"
-                    >
-                      {chatHistory.map((message, index) => (
+                  <div 
+                    ref={chatMessagesRef}
+                    className="absolute inset-0 overflow-y-auto p-4 space-y-4 bg-white"
+                    style={{ paddingBottom: '120px' }} // Space for fixed input
+                  >
+                    {chatHistory.map((message, index) => (
+                      <div
+                        key={index}
+                        className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
                         <div
-                          key={index}
-                          className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                          className={`${
+                            message.type === 'user' 
+                              ? 'max-w-xs lg:max-w-md' 
+                              : 'max-w-full w-full'
+                          } px-4 py-2 rounded-lg text-sm ${
+                            message.type === 'user'
+                              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                              : 'bg-gray-100 text-gray-800 border'
+                          }`}
                         >
+                          <div className="break-words whitespace-pre-wrap font-mono text-xs">
+                            {message.content}
+                          </div>
                           <div
-                            className={`${
-                              message.type === 'user' 
-                                ? 'max-w-xs lg:max-w-md' 
-                                : 'max-w-full w-full'
-                            } px-4 py-2 rounded-lg text-sm ${
-                              message.type === 'user'
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                                : 'bg-gray-100 text-gray-800 border'
+                            className={`text-xs mt-1 ${
+                              message.type === 'user' ? 'text-purple-100' : 'text-gray-500'
                             }`}
                           >
-                            <div className="break-words whitespace-pre-wrap font-mono text-xs">
-                              {message.content}
-                            </div>
-                            <div
-                              className={`text-xs mt-1 ${
-                                message.type === 'user' ? 'text-purple-100' : 'text-gray-500'
-                              }`}
-                            >
-                              {message.timestamp.toLocaleTimeString()}
-                            </div>
+                            {message.timestamp.toLocaleTimeString()}
                           </div>
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Chat Input */}
-                    <div className="border-t bg-white p-4">
-                      <form onSubmit={handleChatSubmit} className="flex space-x-3">
-                        <input
-                          ref={chatInputRef}
-                          type="text"
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          onKeyDown={handleChatKeyDown}
-                          placeholder="Type your command or question... (↑↓ arrows for history)"
-                          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                        />
-                        <button
-                          type="submit"
-                          disabled={!chatInput.trim()}
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                        >
-                          Send
-                        </button>
-                      </form>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Try commands like: <code className="bg-gray-100 px-1 rounded">ls</code>, <code className="bg-gray-100 px-1 rounded">pwd</code>, <code className="bg-gray-100 px-1 rounded">cat filename.txt</code>, or ask questions!
-                      </p>
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -616,6 +589,33 @@ export function VibeAssistant({
                   />
                 </div>
               </div>
+
+              {/* Fixed Chat Input - Always at bottom when connected */}
+              {isConnected && !connectionError && (
+                <div className="border-t bg-white p-4">
+                  <form onSubmit={handleChatSubmit} className="flex space-x-3">
+                    <input
+                      ref={chatInputRef}
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={handleChatKeyDown}
+                      placeholder="Type your command or question... (↑↓ arrows for history)"
+                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!chatInput.trim()}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                      Send
+                    </button>
+                  </form>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Try commands like: <code className="bg-gray-100 px-1 rounded">ls</code>, <code className="bg-gray-100 px-1 rounded">pwd</code>, <code className="bg-gray-100 px-1 rounded">cat filename.txt</code>, or ask questions!
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
