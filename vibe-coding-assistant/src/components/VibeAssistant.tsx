@@ -597,8 +597,8 @@ export function VibeAssistant({
                       <div className="absolute bottom-4 right-4 z-20">
                         <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-slate-300 border border-slate-600">
                           <div className="flex items-center space-x-1">
-                            <span>💡</span>
-                            <span>Try: <kbd className="bg-slate-700 px-1 rounded text-orange-300">ls</kbd> or <kbd className="bg-slate-700 px-1 rounded text-orange-300">pwd</kbd></span>
+                            <span></span>
+                            <span></span>
                           </div>
                         </div>
                       </div>
