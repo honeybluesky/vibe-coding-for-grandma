@@ -2,10 +2,25 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { XMarkIcon, SparklesIcon, WifiIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import '@xterm/xterm/css/xterm.css';
-import io from 'socket.io-client';
+
+// Dynamic imports for browser-only libraries
+const loadBrowserLibraries = async () => {
+  if (typeof window !== 'undefined') {
+    const [terminalModule, fitAddonModule, socketModule] = await Promise.all([
+      import('@xterm/xterm'),
+      import('@xterm/addon-fit'),
+      import('socket.io-client'),
+
+    ]);
+    
+    return {
+      Terminal: terminalModule.Terminal,
+      FitAddon: fitAddonModule.FitAddon,
+      io: socketModule.io
+    };
+  }
+  return null;
+};
 
 // Get PEM key for secure authentication
 const getPemKey = (): string => {
@@ -59,15 +74,17 @@ export function VibeAssistant({
   const [isOpen, setIsOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [chatInput, setChatInput] = useState('');
+  const [chatHistory, setChatHistory] = useState<Array<{type: 'user' | 'assistant', content: string, timestamp: Date}>>([]);
+  const chatInputRef = useRef<HTMLInputElement>(null);
 
   // Terminal refs
   const terminalContainerRef = useRef<HTMLDivElement>(null);
-  const terminalRef = useRef<Terminal | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
-  const socketRef = useRef<ReturnType<typeof io> | null>(null);
+  const terminalRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const fitAddonRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const socketRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -107,7 +124,7 @@ export function VibeAssistant({
   useEffect(() => {
     if (terminalRef.current && typeof window !== 'undefined') {
       const targetContainer = isOpen 
-        ? document.getElementById('terminal-display')
+        ? document.getElementById('terminal-display-hidden')
         : terminalContainerRef.current;
       
       if (targetContainer && terminalRef.current.element) {
@@ -134,6 +151,8 @@ export function VibeAssistant({
     }
   }, [embedded]);
 
+
+
   // Cleanup terminal on component unmount
   useEffect(() => {
     return () => {
@@ -152,22 +171,42 @@ export function VibeAssistant({
     if (typeof window === 'undefined') return;
 
     try {
+      const libs = await loadBrowserLibraries();
+      if (!libs) return;
+
+      const { Terminal, FitAddon } = libs;
       const terminal = new Terminal({
-        cursorBlink: true,
-        fontSize: 14,
-        fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+        cursorBlink: false,
+        fontSize: 13,
+        fontFamily: 'JetBrains Mono, SF Mono, Monaco, Inconsolata, "Roboto Mono", monospace',
         theme: {
-          background: '#1a1a1a',
-          foreground: '#ffffff',
-          cursor: '#ffffff',
+          background: '#ffffff',
+          foreground: '#1f2937',
+          cursor: 'transparent',
+          black: '#374151',
+          red: '#ef4444',
+          green: '#10b981',
+          yellow: '#f59e0b',
+          blue: '#3b82f6',
+          magenta: '#8b5cf6',
+          cyan: '#06b6d4',
+          white: '#f9fafb',
+          brightBlack: '#6b7280',
+          brightRed: '#f87171',
+          brightGreen: '#34d399',
+          brightYellow: '#fbbf24',
+          brightBlue: '#60a5fa',
+          brightMagenta: '#a78bfa',
+          brightCyan: '#22d3ee',
+          brightWhite: '#ffffff',
         },
-        rows: 20,
-        cols: 100,
+        rows: 15,
+        cols: 80,
         allowProposedApi: true,
         allowTransparency: false,
         convertEol: true,
-        disableStdin: false,
-        scrollback: 1000,
+        disableStdin: true, // Disable direct terminal input
+        scrollback: 2000,
       });
 
       const fitAddon = new FitAddon();
@@ -185,18 +224,12 @@ export function VibeAssistant({
           }
         }, 100);
 
-        // Handle terminal input
-        terminal.onData((data: string) => {
-          if (socketRef.current) {
-            socketRef.current.emit('ssh-input', data);
-          }
-        });
-
-        terminal.onKey(() => {
-          if (!terminal.element?.contains(document.activeElement)) {
-            terminal.focus();
-          }
-        });
+        // Add welcome message to chat history
+        setChatHistory([{
+          type: 'assistant',
+          content: 'Hello! I\'m your Vibe Assistant. Ask me anything about coding, or give me commands to run!',
+          timestamp: new Date()
+        }]);
       }
     } catch (error) {
       console.error('Failed to initialize terminal:', error);
@@ -209,6 +242,10 @@ export function VibeAssistant({
     setConnectionError(null);
 
     try {
+      const libs = await loadBrowserLibraries();
+      if (!libs) return;
+
+      const { io } = libs;
       const socket = io(serverUrl, {
         transports: ['websocket', 'polling']
       });
@@ -230,7 +267,7 @@ export function VibeAssistant({
         setSessionId(data.sessionId);
         setIsConnected(true);
         setIsConnecting(false);
-        setIsInitializing(true);
+        // Don't set isInitializing - show chat interface immediately
         
         if (terminalRef.current) {
           terminalRef.current.clear();
@@ -252,17 +289,13 @@ export function VibeAssistant({
           }
         }, 100);
 
-        // Send initialization commands
+        // Send initialization commands in background (don't block UI)
         setTimeout(() => {
           sendInitCommands();
         }, 1000);
       });
 
-      socket.on('ssh-data', (data: string) => {
-        if (terminalRef.current) {
-          terminalRef.current.write(data);
-        }
-      });
+      socket.on('ssh-data', handleTerminalOutput);
 
       socket.on('ssh-error', (error: string) => {
         console.error('Assistant connection error:', error);
@@ -314,14 +347,55 @@ export function VibeAssistant({
         if (socketRef.current) {
           socketRef.current.emit('ssh-input', command + '\n');
         }
-        
-        if (index === initCommands.length - 1) {
-          setTimeout(() => {
-            setIsInitializing(false);
-          }, 1000);
-        }
       }, index * 500);
     });
+  }, []);
+
+  // Handle chat input
+  const handleChatSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !socketRef.current) return;
+
+    const userMessage = {
+      type: 'user' as const,
+      content: chatInput,
+      timestamp: new Date()
+    };
+
+    setChatHistory(prev => [...prev, userMessage]);
+    
+    // Send command to terminal
+    socketRef.current.emit('ssh-input', chatInput + '\n');
+    
+    setChatInput('');
+  }, [chatInput]);
+
+  // Handle special keys (arrows for terminal history)
+  const handleChatKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (socketRef.current) {
+        // Send arrow keys to terminal for command history
+        const arrowCode = e.key === 'ArrowUp' ? '\x1b[A' : '\x1b[B';
+        socketRef.current.emit('ssh-input', arrowCode);
+      }
+    }
+  }, []);
+
+  // Handle terminal output and add to chat
+  const handleTerminalOutput = useCallback((data: string) => {
+    if (terminalRef.current) {
+      terminalRef.current.write(data);
+    }
+    
+    // Also add significant output to chat history
+    if (data.trim() && data.length > 5 && !data.includes('\x1b[')) {
+      setChatHistory(prev => [...prev, {
+        type: 'assistant',
+        content: data.trim(),
+        timestamp: new Date()
+      }]);
+    }
   }, []);
 
   return (
@@ -424,23 +498,7 @@ export function VibeAssistant({
                   </div>
                 )}
 
-                {/* Setup in progress screen */}
-                {isConnected && isInitializing && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 z-10">
-                    <div className="text-center max-w-sm">
-                      <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                      <h3 className="text-lg font-semibold text-neutral-800 mb-2">✨ Connected! Setting up your workspace</h3>
-                      <p className="text-sm text-neutral-600 mb-4">Preparing your AI-powered development environment...</p>
-                      <div className="flex items-center justify-center space-x-1">
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+
                 
                 {/* Error state */}
                 {connectionError && (
@@ -461,17 +519,72 @@ export function VibeAssistant({
                   </div>
                 )}
                 
-                {/* Real terminal display */}
-                <div 
-                  id="terminal-display"
-                  className="w-full h-full"
-                  style={{ 
-                    height: '100%', 
-                    padding: '8px',
-                    visibility: isInitializing ? 'hidden' : 'visible',
-                    opacity: isInitializing ? 0 : 1
-                  }}
-                />
+                {/* Chat Interface - Only show when ready */}
+                {isConnected && !connectionError && (
+                  <div className="w-full h-full flex flex-col bg-white">
+                    {/* Chat Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                      {chatHistory.map((message, index) => (
+                        <div
+                          key={index}
+                          className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm ${
+                              message.type === 'user'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                                : 'bg-gray-100 text-gray-800 border'
+                            }`}
+                          >
+                            <div className="break-words whitespace-pre-wrap font-mono text-xs">
+                              {message.content}
+                            </div>
+                            <div
+                              className={`text-xs mt-1 ${
+                                message.type === 'user' ? 'text-purple-100' : 'text-gray-500'
+                              }`}
+                            >
+                              {message.timestamp.toLocaleTimeString()}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Chat Input */}
+                    <div className="border-t bg-white p-4">
+                      <form onSubmit={handleChatSubmit} className="flex space-x-3">
+                        <input
+                          ref={chatInputRef}
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={handleChatKeyDown}
+                          placeholder="Type your command or question... (↑↓ arrows for history)"
+                          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!chatInput.trim()}
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          Send
+                        </button>
+                      </form>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Try commands like: <code className="bg-gray-100 px-1 rounded">ls</code>, <code className="bg-gray-100 px-1 rounded">pwd</code>, <code className="bg-gray-100 px-1 rounded">cat filename.txt</code>, or ask questions!
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Hidden Terminal for backend processing */}
+                <div className="hidden">
+                  <div 
+                    id="terminal-display-hidden"
+                    className="w-full h-full"
+                  />
+                </div>
               </div>
             </div>
           </div>
