@@ -1,12 +1,15 @@
 'use client';
 
 import { VibeAssistant } from '@/components/VibeAssistant';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      {/* Full-screen embedded widget */}
-      <VibeAssistant embedded={true} />
+      {/* Full-screen embedded widget with error boundary */}
+      <ErrorBoundary>
+        <VibeAssistant embedded={true} />
+      </ErrorBoundary>
       
       {/* Fallback content in case the widget doesn't load */}
       <div className="absolute inset-0 flex items-center justify-center z-0">
