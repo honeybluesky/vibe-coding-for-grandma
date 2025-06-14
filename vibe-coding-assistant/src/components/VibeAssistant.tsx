@@ -2,10 +2,37 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { XMarkIcon, SparklesIcon, WifiIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import '@xterm/xterm/css/xterm.css';
-import io from 'socket.io-client';
+// Dynamically import xterm to avoid SSR issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Terminal: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let FitAddon: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let socketIo: any = null;
+
+// Load xterm modules only on client side
+const loadXtermModules = async () => {
+  if (typeof window !== 'undefined' && !Terminal) {
+    const [xtermModule, fitAddonModule, socketModule] = await Promise.all([
+      import('@xterm/xterm'),
+      import('@xterm/addon-fit'),
+      import('socket.io-client')
+    ]);
+    
+    Terminal = xtermModule.Terminal;
+    FitAddon = fitAddonModule.FitAddon;
+    socketIo = socketModule.io;
+    
+    // Import CSS dynamically
+    try {
+      // @ts-expect-error - CSS import might not have types
+      await import('@xterm/xterm/css/xterm.css');
+    } catch (e) {
+      // CSS import might fail in some environments, that's ok
+      console.warn('Could not load xterm CSS:', e);
+    }
+  }
+};
 
 // Get PEM key for secure authentication
 const getPemKey = (): string => {
@@ -65,9 +92,12 @@ export function VibeAssistant({
 
   // Terminal refs
   const terminalContainerRef = useRef<HTMLDivElement>(null);
-  const terminalRef = useRef<Terminal | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
-  const socketRef = useRef<ReturnType<typeof io> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const terminalRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fitAddonRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const socketRef = useRef<any>(null);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -90,16 +120,19 @@ export function VibeAssistant({
   // Initialize terminal when dialog opens
   useEffect(() => {
     if (isOpen && terminalContainerRef.current && !terminalRef.current) {
-      initializeTerminal();
+      loadXtermModules().then(() => {
+        initializeTerminal();
+      });
     }
   }, [isOpen]);
 
-  // Auto-connect when terminal is ready
+  // Auto-connect when dialog opens
   useEffect(() => {
-    if (isOpen && terminalRef.current && !isConnected && !isConnecting) {
+    if (isOpen && !isConnected && !isConnecting) {
+      // Small delay to ensure terminal is ready
       setTimeout(() => {
         connectToAssistant();
-      }, 500);
+      }, 1000);
     }
   }, [isOpen, isConnected, isConnecting]);
 
@@ -150,6 +183,12 @@ export function VibeAssistant({
 
   const initializeTerminal = useCallback(async () => {
     if (typeof window === 'undefined') return;
+    
+    // Ensure modules are loaded
+    if (!Terminal || !FitAddon) {
+      console.error('Terminal modules not loaded');
+      return;
+    }
 
     try {
       const terminal = new Terminal({
@@ -224,18 +263,33 @@ export function VibeAssistant({
   }, []);
 
   const connectToAssistant = useCallback(async () => {
+    console.log('🚀 connectToAssistant called', { isConnecting, isConnected });
+    if (isConnecting || isConnected) return;
+    
+    // Load xterm modules first
+    console.log('📦 Loading xterm modules...');
+    await loadXtermModules();
+    
+    if (!Terminal || !FitAddon || !socketIo) {
+      console.error('❌ Failed to load terminal components');
+      setConnectionError('Failed to load terminal components');
+      setIsConnecting(false);
+      return;
+    }
+    
+    console.log('✅ Modules loaded, starting connection...');
     setIsConnecting(true);
     setConnectionError(null);
 
     try {
-      const socket = io(serverUrl, {
+      const socket = socketIo(serverUrl, {
         transports: ['websocket', 'polling']
       });
 
       socketRef.current = socket;
 
       socket.on('connect', () => {
-        console.log('Connected to your coding assistant');
+        console.log('🔌 Connected to socket server');
         socket.emit('ssh-connect', {
           host: 'localhost',
           port: 22,
@@ -245,7 +299,7 @@ export function VibeAssistant({
       });
 
       socket.on('ssh-ready', (data: { sessionId: string }) => {
-        console.log('Assistant ready:', data);
+        console.log('🎉 SSH ready:', data);
         setSessionId(data.sessionId);
         setIsConnected(true);
         setIsConnecting(false);
@@ -270,6 +324,23 @@ export function VibeAssistant({
             }
           }
         }, 100);
+
+        // Move terminal to display container
+        setTimeout(() => {
+          const displayContainer = document.getElementById('terminal-display');
+          console.log('🖥️ Moving terminal to display container', { 
+            displayContainer: !!displayContainer, 
+            terminalElement: !!terminalRef.current?.element 
+          });
+          if (displayContainer && terminalRef.current?.element) {
+            displayContainer.appendChild(terminalRef.current.element);
+            if (fitAddonRef.current) {
+              fitAddonRef.current.fit();
+            }
+            terminalRef.current.focus();
+            console.log('✅ Terminal moved and focused');
+          }
+        }, 500);
 
         // Send initialization commands
         setTimeout(() => {
@@ -336,6 +407,7 @@ export function VibeAssistant({
         
         if (index === initCommands.length - 1) {
           setTimeout(() => {
+            console.log('🏁 Initialization complete, showing terminal');
             setIsInitializing(false);
           }, 1000);
         }
@@ -411,16 +483,15 @@ export function VibeAssistant({
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 z-10">
                     <div className="text-center max-w-sm">
                       <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <SparklesIcon className="w-8 h-8 text-white" />
+                        <SparklesIcon className="w-8 h-8 text-white animate-pulse" />
                       </div>
-                      <h3 className="text-lg font-semibold text-neutral-800 mb-2">Ready to help you code</h3>
-                      <p className="text-sm text-neutral-600 mb-4">Your AI coding companion is standing by...</p>
-                      <button
-                        onClick={connectToAssistant}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg text-sm font-medium transition-all duration-200"
-                      >
-                        Start Coding Session
-                      </button>
+                      <h3 className="text-lg font-semibold text-neutral-800 mb-2">Starting your coding session</h3>
+                      <p className="text-sm text-neutral-600 mb-4">Your AI coding companion is waking up...</p>
+                      <div className="flex items-center justify-center space-x-1">
+                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -481,7 +552,9 @@ export function VibeAssistant({
                 )}
                 
                 {/* Real terminal display with custom styling */}
-                <div className="w-full h-full relative">
+                <div className="w-full h-full relative" style={{ 
+                  zIndex: isConnected && !isInitializing ? 20 : 1 
+                }}>
                   {/* Terminal header bar */}
                   <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-3 flex items-center space-x-3 border-b border-slate-600">
                     {/* Mac-style window buttons */}
@@ -500,12 +573,28 @@ export function VibeAssistant({
                     </div>
                     
                     {/* Connection status */}
-                    {isConnected && (
-                      <div className="flex items-center space-x-2 text-xs text-green-400">
-                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                        <span>Connected</span>
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2 text-xs">
+                      {isConnected ? (
+                        <div className="flex items-center space-x-2 text-green-400">
+                          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                          <span>Connected</span>
+                        </div>
+                      ) : isConnecting ? (
+                        <div className="flex items-center space-x-2 text-yellow-400">
+                          <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
+                          <span>Connecting...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2 text-slate-400">
+                          <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                          <span>Disconnected</span>
+                        </div>
+                      )}
+                      {/* Debug info */}
+                      <span className="text-slate-500 text-xs">
+                        {isInitializing ? '(Init)' : '(Ready)'}
+                      </span>
+                    </div>
                   </div>
                   
                   {/* Terminal content with gradient background */}
