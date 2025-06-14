@@ -79,12 +79,20 @@ export function VibeAssistant({
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{type: 'user' | 'assistant', content: string, timestamp: Date}>>([]);
   const chatInputRef = useRef<HTMLInputElement>(null);
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
 
   // Terminal refs
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const fitAddonRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const socketRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  // Auto-scroll to bottom when new messages arrive
+  const scrollToBottom = useCallback(() => {
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }
+  }, []);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -152,6 +160,11 @@ export function VibeAssistant({
   }, [embedded]);
 
 
+
+  // Auto-scroll when chat history changes
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatHistory, scrollToBottom]);
 
   // Cleanup terminal on component unmount
   useEffect(() => {
@@ -362,13 +375,18 @@ export function VibeAssistant({
       timestamp: new Date()
     };
 
-    setChatHistory(prev => [...prev, userMessage]);
+    setChatHistory(prev => {
+      const newHistory = [...prev, userMessage];
+      // Auto-scroll after adding user message
+      setTimeout(scrollToBottom, 100);
+      return newHistory;
+    });
     
     // Send command to terminal
     socketRef.current.emit('ssh-input', chatInput + '\n');
     
     setChatInput('');
-  }, [chatInput]);
+  }, [chatInput, scrollToBottom]);
 
   // Handle special keys (arrows for terminal history)
   const handleChatKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -390,13 +408,18 @@ export function VibeAssistant({
     
     // Also add significant output to chat history
     if (data.trim() && data.length > 5 && !data.includes('\x1b[')) {
-      setChatHistory(prev => [...prev, {
-        type: 'assistant',
-        content: data.trim(),
-        timestamp: new Date()
-      }]);
+      setChatHistory(prev => {
+        const newHistory = [...prev, {
+          type: 'assistant' as const,
+          content: data.trim(),
+          timestamp: new Date()
+        }];
+        // Auto-scroll after state update
+        setTimeout(scrollToBottom, 100);
+        return newHistory;
+      });
     }
-  }, []);
+  }, [scrollToBottom]);
 
   return (
     <>
@@ -523,14 +546,21 @@ export function VibeAssistant({
                 {isConnected && !connectionError && (
                   <div className="w-full h-full flex flex-col bg-white">
                     {/* Chat Messages Area */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div 
+                      ref={chatMessagesRef}
+                      className="flex-1 overflow-y-auto p-4 space-y-4"
+                    >
                       {chatHistory.map((message, index) => (
                         <div
                           key={index}
                           className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm ${
+                            className={`${
+                              message.type === 'user' 
+                                ? 'max-w-xs lg:max-w-md' 
+                                : 'max-w-full w-full'
+                            } px-4 py-2 rounded-lg text-sm ${
                               message.type === 'user'
                                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                                 : 'bg-gray-100 text-gray-800 border'
