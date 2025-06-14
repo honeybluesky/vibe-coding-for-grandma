@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ExclamationTriangleIcon, CommandLineIcon } from '@heroicons/react/24/outline';
 // Dynamically import xterm to avoid SSR issues
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Terminal: any = null;
@@ -307,8 +307,8 @@ export function VibeAssistant({
         
         if (terminalRef.current) {
           terminalRef.current.clear();
-          terminalRef.current.writeln('🎉 Welcome to Vibe Assistant!');
-          terminalRef.current.writeln('Powered by Anthropic - Your AI coding companion is ready.');
+          terminalRef.current.writeln('🎉 Welcome to your Coding Assistant!');
+          terminalRef.current.writeln('Powered by Anthropic - Ready to help you code.');
         }
 
         // Fit terminal after connection
@@ -431,11 +431,11 @@ export function VibeAssistant({
         <div className="fixed bottom-4 right-4 z-40">
           <button
             onClick={() => setIsOpen(true)}
-            className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
-            title="Open Vibe Assistant - Powered by Anthropic (⌘K)"
-          >
-            <SparklesIcon className="w-6 h-6" />
-          </button>
+            className="group bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+            title="Open Coding Assistant - Powered by Anthropic (⌘K)"
+                      >
+              <CommandLineIcon className="w-6 h-6" />
+            </button>
         </div>
       )}
 
@@ -446,11 +446,11 @@ export function VibeAssistant({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-neutral-200">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-                  <SparklesIcon className="w-5 h-5 text-white" />
-                </div>
+                                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
+                    <CommandLineIcon className="w-5 h-5 text-white" />
+                  </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-neutral-900">Vibe Assistant</h2>
+                  <h2 className="text-lg font-semibold text-neutral-900">Coding Assistant</h2>
                   <p className="text-xs text-neutral-500">Powered by Anthropic</p>
                 </div>
                 <div className="flex items-center text-xs text-neutral-500 bg-neutral-100 px-2 py-1 rounded-full">
@@ -474,17 +474,17 @@ export function VibeAssistant({
               <div className="flex-1 bg-neutral-900 relative overflow-hidden">
                 {/* Loading screen */}
                 {!isConnected && !isConnecting && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 z-10">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 z-10">
                     <div className="text-center max-w-sm">
-                      <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <SparklesIcon className="w-8 h-8 text-white animate-pulse" />
+                      <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CommandLineIcon className="w-8 h-8 text-white animate-pulse" />
                       </div>
                       <h3 className="text-lg font-semibold text-neutral-800 mb-2">Starting your coding session</h3>
-                      <p className="text-sm text-neutral-600 mb-4">Claude Code is initializing your workspace...</p>
+                      <p className="text-sm text-neutral-600 mb-4">Anthropic is initializing your workspace...</p>
                       <div className="flex items-center justify-center space-x-1">
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                       </div>
                     </div>
                   </div>
@@ -492,17 +492,17 @@ export function VibeAssistant({
                 
                 {/* Connecting screen */}
                 {isConnecting && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 z-10">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 z-10">
                     <div className="text-center max-w-sm">
-                      <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
                         <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       </div>
                       <h3 className="text-lg font-semibold text-neutral-800 mb-2">Connecting to your workspace</h3>
                       <p className="text-sm text-neutral-600 mb-4">Setting up your coding workspace...</p>
                       <div className="flex items-center justify-center space-x-1">
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                       </div>
                     </div>
                   </div>
@@ -510,17 +510,35 @@ export function VibeAssistant({
 
                 {/* Setup in progress screen */}
                 {isConnected && isInitializing && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 z-10">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 z-10">
                     <div className="text-center max-w-sm">
-                      <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
                         <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       </div>
-                      <h3 className="text-lg font-semibold text-neutral-800 mb-2">✨ Connected! Setting up your workspace</h3>
+                      <h3 className="text-lg font-semibold text-neutral-800 mb-2">🚀 Connected! Setting up coding space</h3>
                       <p className="text-sm text-neutral-600 mb-4">Preparing your coding workspace...</p>
+                      
+                      {/* Progress steps */}
+                      <div className="bg-white/80 rounded-lg p-4 mb-4 text-left max-w-xs mx-auto">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center space-x-2 text-orange-600">
+                            <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                            <span>Installing dependencies</span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-orange-600">
+                            <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                            <span>Setting up environment</span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-orange-600">
+                            <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                            <span>Starting coding assistant</span>
+                          </div>
+                        </div>
+                      </div>
                       <div className="flex items-center justify-center space-x-1">
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                       </div>
                     </div>
                   </div>
@@ -534,12 +552,12 @@ export function VibeAssistant({
                         <ExclamationTriangleIcon className="w-8 h-8 text-red-600" />
                       </div>
                       <h3 className="text-lg font-semibold text-red-800 mb-2">Connection failed</h3>
-                      <p className="text-sm text-red-600 mb-4">Unable to connect to Claude Code. Let&apos;s try again.</p>
+                      <p className="text-sm text-red-600 mb-4">Unable to connect to Anthropic. Let&apos;s try again.</p>
                                               <button 
                         onClick={connectToAssistant}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg text-sm font-medium transition-all duration-200"
+                        className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-lg text-sm font-medium transition-all duration-200"
                       >
-                        Reconnect to Claude Code
+                        Reconnect to Anthropic
                       </button>
                     </div>
                   </div>
@@ -556,8 +574,8 @@ export function VibeAssistant({
                       className="absolute inset-0 opacity-5"
                       style={{
                         backgroundImage: `
-                          linear-gradient(rgba(168, 85, 247, 0.1) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(168, 85, 247, 0.1) 1px, transparent 1px)
+                          linear-gradient(rgba(249, 115, 22, 0.1) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(249, 115, 22, 0.1) 1px, transparent 1px)
                         `,
                         backgroundSize: '20px 20px'
                       }}
@@ -580,18 +598,18 @@ export function VibeAssistant({
                         <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-slate-300 border border-slate-600">
                           <div className="flex items-center space-x-1">
                             <span>💡</span>
-                            <span>Try: <kbd className="bg-slate-700 px-1 rounded text-purple-300">ls</kbd> or <kbd className="bg-slate-700 px-1 rounded text-purple-300">pwd</kbd></span>
+                            <span>Try: <kbd className="bg-slate-700 px-1 rounded text-orange-300">ls</kbd> or <kbd className="bg-slate-700 px-1 rounded text-orange-300">pwd</kbd></span>
                           </div>
                         </div>
                       </div>
                     )}
                     
-                    {/* Claude Code branding footer */}
+                    {/* Anthropic branding footer */}
                     {isConnected && !isInitializing && (
                       <div className="absolute bottom-4 left-4 z-20">
                         <div className="bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-slate-400 border border-slate-700/50">
                           <div className="flex items-center space-x-2">
-                            <SparklesIcon className="w-3 h-3 text-purple-400" />
+                            <CommandLineIcon className="w-3 h-3 text-orange-400" />
                             <span>Powered by Anthropic</span>
                           </div>
                         </div>
